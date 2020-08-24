@@ -2,9 +2,13 @@ import io.qameta.allure.Description;
 import io.qameta.allure.Step;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
+import io.restassured.response.ResponseBody;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.testng.Assert;
+import org.testng.asserts.Assertion;
 
 import java.util.HashMap;
 import java.util.List;
@@ -19,25 +23,31 @@ public class Steps {
     @Step
     @Description(value = "Проверка совпадения аваторов у пользователей")
     public static void checkAvatarUsers(){
-        given()
+        Response response = given()
                 .when()
                 .get("https://reqres.in/api/users?page=2")
                 .then()
                 .log().all()
-                .body("data.avatar", hasItems("https://s3.amazonaws.com/uifaces/faces/twitter/follettkyle/128.jpg"));
+                .extract().response();
+
+        List<String> jsonResponse = response.jsonPath().getList("data.avatar");
+        Assert.assertTrue(jsonResponse.stream().anyMatch(x -> x.contains(jsonResponse.get(0))), "Avatars not equals");
     }
 
     @Step
     @Description(value = "Проверка совпадения аваторов у пользователей с использованием спецификации")
     public static void checkAvatarWithSpec(RequestSpecification reqSpec, ResponseSpecification resSpec){
-        given()
+        Response response = given()
                 .spec(reqSpec)
                 .when()
                 .get("/users?page=2")
                 .then()
                 .log().all()
-                .body("data.avatar", hasItems("https://s3.amazonaws.com/uifaces/faces/twitter/follettkyle/128.jpg"))
-                .spec(resSpec);
+                .spec(resSpec)
+                .extract().response();
+
+        List<String> jsonResponse = response.jsonPath().getList("data.avatar");
+        Assert.assertTrue(jsonResponse.stream().anyMatch(x -> x.contains(jsonResponse.get(0))), "Avatars not equals");
     }
 
     @Step
